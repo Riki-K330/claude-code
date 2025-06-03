@@ -6,8 +6,15 @@
     claude:
       if: github.event.issue.pull_request == null
       runs-on: ubuntu-latest
+      permissions:
+        contents: read
+        issues: write
+        pull-requests: write
       steps:
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.CLAUDE_GITHUB_TOKEN }}
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
