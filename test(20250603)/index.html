@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTMLサンプルページ</title>
+    <title>オセロゲーム</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f0f0f0;
+            background-color: #2d5a27;
+            text-align: center;
         }
         .container {
-            max-width: 800px;
+            max-width: 600px;
             margin: 0 auto;
             background-color: white;
             padding: 20px;
@@ -22,24 +23,310 @@
         h1 {
             color: #333;
             text-align: center;
+            margin-bottom: 20px;
         }
-        p {
-            line-height: 1.6;
-            color: #666;
+        .game-info {
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .current-player {
+            color: #333;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            gap: 2px;
+            justify-content: center;
+            background-color: #2d5a27;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 60px;
+            height: 60px;
+            background-color: #4a7c59;
+            border: 1px solid #2d5a27;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .cell:hover {
+            background-color: #5a8c6a;
+        }
+        .piece {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+        .black {
+            background-color: #333;
+        }
+        .white {
+            background-color: #fff;
+        }
+        .valid-move {
+            background-color: #7ba86b !important;
+        }
+        .valid-move::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+        .scores {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        .score {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .score-piece {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+        .reset-btn {
+            background-color: #4a7c59;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .reset-btn:hover {
+            background-color: #2d5a27;
+        }
+        .game-over {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d32f2f;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>ようこそ！</h1>
-        <p>これは簡単なHTMLのサンプルページです。</p>
-        <p>このページには以下の要素が含まれています：</p>
-        <ul>
-            <li>見出し (h1)</li>
-            <li>段落 (p)</li>
-            <li>リスト (ul, li)</li>
-            <li>スタイリング (CSS)</li>
-        </ul>
+        <h1>オセロゲーム</h1>
+        
+        <div class="game-info">
+            <div class="current-player">現在のプレイヤー: <span id="current-player">黒</span></div>
+        </div>
+        
+        <div class="scores">
+            <div class="score">
+                <div class="score-piece black"></div>
+                <span>黒: <span id="black-score">2</span></span>
+            </div>
+            <div class="score">
+                <div class="score-piece white"></div>
+                <span>白: <span id="white-score">2</span></span>
+            </div>
+        </div>
+        
+        <div class="board" id="board"></div>
+        
+        <div id="game-over" class="game-over" style="display: none;"></div>
+        
+        <button class="reset-btn" onclick="resetGame()">新しいゲーム</button>
     </div>
+
+    <script>
+        let board = [];
+        let currentPlayer = 'black';
+        const directions = [
+            [-1, -1], [-1, 0], [-1, 1],
+            [0, -1],           [0, 1],
+            [1, -1],  [1, 0],  [1, 1]
+        ];
+
+        function initializeBoard() {
+            board = Array(8).fill().map(() => Array(8).fill(null));
+            board[3][3] = 'white';
+            board[3][4] = 'black';
+            board[4][3] = 'black';
+            board[4][4] = 'white';
+            currentPlayer = 'black';
+        }
+
+        function createBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.onclick = () => makeMove(row, col);
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        function updateBoard() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                cell.innerHTML = '';
+                cell.classList.remove('valid-move');
+                
+                if (board[row][col]) {
+                    const piece = document.createElement('div');
+                    piece.className = `piece ${board[row][col]}`;
+                    cell.appendChild(piece);
+                }
+            });
+            
+            showValidMoves();
+            updateScores();
+            updateCurrentPlayer();
+        }
+
+        function isValidMove(row, col, player) {
+            if (board[row][col] !== null) return false;
+            
+            for (let [dx, dy] of directions) {
+                if (canFlipInDirection(row, col, dx, dy, player)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function canFlipInDirection(row, col, dx, dy, player) {
+            let x = row + dx;
+            let y = col + dy;
+            let hasOpponentPiece = false;
+            
+            while (x >= 0 && x < 8 && y >= 0 && y < 8) {
+                if (board[x][y] === null) return false;
+                if (board[x][y] === player) return hasOpponentPiece;
+                hasOpponentPiece = true;
+                x += dx;
+                y += dy;
+            }
+            return false;
+        }
+
+        function makeMove(row, col) {
+            if (!isValidMove(row, col, currentPlayer)) return;
+            
+            board[row][col] = currentPlayer;
+            
+            for (let [dx, dy] of directions) {
+                if (canFlipInDirection(row, col, dx, dy, currentPlayer)) {
+                    flipPiecesInDirection(row, col, dx, dy, currentPlayer);
+                }
+            }
+            
+            currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+            
+            if (!hasValidMoves(currentPlayer)) {
+                currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+                if (!hasValidMoves(currentPlayer)) {
+                    endGame();
+                    return;
+                }
+            }
+            
+            updateBoard();
+        }
+
+        function flipPiecesInDirection(row, col, dx, dy, player) {
+            let x = row + dx;
+            let y = col + dy;
+            
+            while (x >= 0 && x < 8 && y >= 0 && y < 8 && board[x][y] !== player) {
+                board[x][y] = player;
+                x += dx;
+                y += dy;
+            }
+        }
+
+        function hasValidMoves(player) {
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (isValidMove(row, col, player)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function showValidMoves() {
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (isValidMove(row, col, currentPlayer)) {
+                        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                        cell.classList.add('valid-move');
+                    }
+                }
+            }
+        }
+
+        function updateScores() {
+            let blackScore = 0;
+            let whiteScore = 0;
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (board[row][col] === 'black') blackScore++;
+                    if (board[row][col] === 'white') whiteScore++;
+                }
+            }
+            
+            document.getElementById('black-score').textContent = blackScore;
+            document.getElementById('white-score').textContent = whiteScore;
+        }
+
+        function updateCurrentPlayer() {
+            document.getElementById('current-player').textContent = currentPlayer === 'black' ? '黒' : '白';
+        }
+
+        function endGame() {
+            const blackScore = parseInt(document.getElementById('black-score').textContent);
+            const whiteScore = parseInt(document.getElementById('white-score').textContent);
+            const gameOverElement = document.getElementById('game-over');
+            
+            let message;
+            if (blackScore > whiteScore) {
+                message = '黒の勝利！';
+            } else if (whiteScore > blackScore) {
+                message = '白の勝利！';
+            } else {
+                message = '引き分け！';
+            }
+            
+            gameOverElement.textContent = message;
+            gameOverElement.style.display = 'block';
+        }
+
+        function resetGame() {
+            document.getElementById('game-over').style.display = 'none';
+            initializeBoard();
+            updateBoard();
+        }
+
+        initializeBoard();
+        createBoard();
+        updateBoard();
+    </script>
 </body>
 </html>
