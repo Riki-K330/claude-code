@@ -1,5 +1,5 @@
   name: Claude
-  on: push
+  on: [push, issue_comment]
   jobs:
     test:
       runs-on: ubuntu-latest
