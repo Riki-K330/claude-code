@@ -221,18 +221,21 @@ function runTestChat() {
   
   SpreadsheetApp.getUi().alert(
     '🧪 テスト実行',
-    `テストクエリ: "${randomQuery}"\\n\\n実行中...`
+    `テストクエリ: "${randomQuery}"\\n\\n実行中...`,
+    SpreadsheetApp.getUi().ButtonSet.OK
   );
   
   const result = processUserMessage(randomQuery, "test-user");
   
+  const responsePreview = result.response ? result.response.substring(0, 200) : "エラーが発生しました";
+  
   SpreadsheetApp.getUi().alert(
     '🧪 テスト結果',
     `クエリ: ${randomQuery}\\n\\n` +
-    `意図分類: ${result.intent}\\n\\n` +
+    `意図分類: ${result.intent}\\n` +
+    `成功: ${result.success}\\n` +
     `応答時間: ${result.responseTime}ms\\n\\n` +
-    `回答: ${result.response.substring(0, 200)}...`,
-    SpreadsheetApp.getUi().ButtonSet.OK
+    `回答: ${responsePreview}...`
   );
 }
 

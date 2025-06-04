@@ -307,6 +307,47 @@ function testSettings() {
 }
 
 /**
+ * Q&A機能のテスト（デバッグ用）
+ */
+function testQAFunctionality() {
+  console.log("=== Q&A機能テスト ===");
+  
+  const query = "医療費控除について教えて";
+  console.log("テストクエリ:", query);
+  
+  // 意図分類
+  const intent = categorizeIntent(query);
+  console.log("意図:", intent);
+  
+  // Q&A検索
+  const qaResults = searchRelatedQA("医療費控除", query);
+  console.log("Q&A検索結果:", qaResults);
+  
+  // スプレッドシートから直接Q&Aデータを確認
+  try {
+    const sheet = SpreadsheetApp.openById(CONFIG.SHEET_ID)
+      .getSheetByName(CONFIG.SHEET_NAMES.QA);
+    
+    if (sheet) {
+      const data = sheet.getDataRange().getValues();
+      console.log("Q&Aシートのデータ行数:", data.length);
+      console.log("Q&Aヘッダー:", data[0]);
+      
+      // 医療費控除関連を検索
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][1] && data[i][1].includes("医療費控除")) {
+          console.log(`Q&A発見: ${data[i][1]} -> ${data[i][2]}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Q&Aシート確認エラー:", error);
+  }
+  
+  return qaResults;
+}
+
+/**
  * 簡単なデータ取得テスト（デバッグ用）
  */
 function testPriceDataRetrieval() {

@@ -72,7 +72,7 @@ function categorizeIntent(userMessage) {
       priority: 2
     },
     procedure: {
-      keywords: ["解約", "キャンセル", "変更", "休止", "再開", "手続き"],
+      keywords: ["解約", "キャンセル", "変更", "休止", "再開", "手続き", "医療費控除", "控除", "確定申告"],
       priority: 3
     },
     side_effects: {
@@ -134,7 +134,12 @@ function getContextByIntent(intent, userMessage) {
       
     case "procedure":
       context.procedureInfo = getProcedureInfo(userMessage);
-      context.relatedQA = searchRelatedQA("手続き", userMessage);
+      // 医療費控除の場合は該当カテゴリで検索
+      if (userMessage.includes("医療費控除") || userMessage.includes("控除")) {
+        context.relatedQA = searchRelatedQA("医療費控除", userMessage);
+      } else {
+        context.relatedQA = searchRelatedQA("手続き", userMessage);
+      }
       break;
       
     case "side_effects":
@@ -210,14 +215,45 @@ function searchRelatedQA(category, query) {
     const data = sheet.getDataRange().getValues();
     const qaList = [];
     
+    console.log("Q&A検索 - カテゴリ:", category, "クエリ:", query);
+    
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === category || query.includes(data[i][1])) {
+      const qaCategory = data[i][0];
+      const qaQuestion = data[i][1];
+      const qaAnswer = data[i][2];
+      
+      // より柔軟な検索ロジック
+      let isMatch = false;
+      
+      // カテゴリ完全一致
+      if (qaCategory === category) {
+        isMatch = true;
+      }
+      // クエリに質問の内容が含まれる
+      else if (qaQuestion && query.includes(qaQuestion)) {
+        isMatch = true;
+      }
+      // 質問にクエリのキーワードが含まれる
+      else if (qaQuestion && qaQuestion.includes("医療費控除") && query.includes("医療費控除")) {
+        isMatch = true;
+      }
+      // 支払い関連のキーワード検索
+      else if (qaQuestion && (
+        (query.includes("支払") && qaQuestion.includes("支払")) ||
+        (query.includes("解約") && qaQuestion.includes("解約")) ||
+        (query.includes("定期") && qaQuestion.includes("定期"))
+      )) {
+        isMatch = true;
+      }
+      
+      if (isMatch && qaQuestion && qaAnswer) {
         qaList.push({
-          category: data[i][0],
-          question: data[i][1],
-          answer: data[i][2],
+          category: qaCategory,
+          question: qaQuestion,
+          answer: qaAnswer,
           frequency: data[i][3]
         });
+        console.log(`Q&A一致: ${qaQuestion}`);
       }
     }
     
@@ -227,6 +263,7 @@ function searchRelatedQA(category, query) {
       return (freqOrder[b.frequency] || 0) - (freqOrder[a.frequency] || 0);
     });
     
+    console.log(`Q&A検索結果: ${qaList.length}件`);
     return qaList.slice(0, 3); // 上位3件を返す
   } catch (error) {
     console.error("Q&A検索エラー:", error);
