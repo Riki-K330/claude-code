@@ -19,9 +19,16 @@ function callClaudeAPI(userMessage, context = {}) {
     const systemPrompt = getDynamicSystemPrompt ? getDynamicSystemPrompt() : getSystemPrompt();
     const contextualPrompt = buildContextualPrompt(userMessage, context);
     
+    // 動的モデル設定の取得
+    const currentModel = getCurrentModel ? getCurrentModel() : CONFIG.MODEL;
+    const modelInfo = getModelInfo ? getModelInfo(currentModel) : null;
+    const maxTokens = DynamicConfig.get("api_max_tokens_auto", "TRUE") === "TRUE" && modelInfo
+      ? Math.min(modelInfo.maxTokens, parseInt(DynamicConfig.get("api_max_tokens", CONFIG.MAX_TOKENS)))
+      : parseInt(DynamicConfig.get("api_max_tokens", CONFIG.MAX_TOKENS));
+    
     // APIリクエストペイロード
     const payload = {
-      model: CONFIG.MODEL,
+      model: currentModel,
       system: systemPrompt,
       messages: [
         {
@@ -29,8 +36,8 @@ function callClaudeAPI(userMessage, context = {}) {
           content: contextualPrompt
         }
       ],
-      max_tokens: CONFIG.MAX_TOKENS,
-      temperature: CONFIG.TEMPERATURE
+      max_tokens: maxTokens,
+      temperature: parseFloat(DynamicConfig.get("api_temperature", CONFIG.TEMPERATURE))
     };
     
     // APIリクエストオプション
@@ -64,11 +71,12 @@ function callClaudeAPI(userMessage, context = {}) {
     
     const result = JSON.parse(responseText);
     
-    // 使用量トラッキング
+    // 使用量トラッキング（モデル別コスト計算）
     trackAPIUsage(
       result.usage?.input_tokens || 0,
       result.usage?.output_tokens || 0,
-      endTime - startTime
+      endTime - startTime,
+      currentModel
     );
     
     return {
@@ -137,7 +145,7 @@ function buildContextualPrompt(userMessage, context) {
 /**
  * API使用量を記録
  */
-function trackAPIUsage(inputTokens, outputTokens, responseTime) {
+function trackAPIUsage(inputTokens, outputTokens, responseTime, modelName = null) {
   try {
     const sheet = SpreadsheetApp.openById(CONFIG.SHEET_ID)
       .getSheetByName(CONFIG.SHEET_NAMES.API_USAGE);
@@ -148,11 +156,14 @@ function trackAPIUsage(inputTokens, outputTokens, responseTime) {
     }
     
     const timestamp = new Date();
-    const cost = calculateAPICost(inputTokens, outputTokens);
+    const usedModel = modelName || getCurrentModel() || CONFIG.MODEL;
+    const cost = calculateModelCost ? 
+      calculateModelCost(inputTokens, outputTokens, usedModel) : 
+      calculateAPICost(inputTokens, outputTokens);
     
     sheet.appendRow([
       timestamp,
-      CONFIG.MODEL,
+      usedModel,
       inputTokens,
       outputTokens,
       inputTokens + outputTokens,

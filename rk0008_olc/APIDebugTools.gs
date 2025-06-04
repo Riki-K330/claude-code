@@ -282,6 +282,40 @@ function diagnoseAPIPayload() {
 }
 
 /**
+ * 実際のチャットテスト（30秒タイムアウト）
+ */
+function testActualChat() {
+  console.log("=== 実際のチャットテスト ===");
+  
+  try {
+    const query = "アカルボースの価格を教えて";
+    const intent = categorizeIntent(query);
+    const context = getContextByIntent(intent, query);
+    
+    return testAPIWithTimeout(query, context, 30000);
+  } catch (error) {
+    console.error("実際のチャットテストエラー:", error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+/**
+ * 簡単なチャットテスト（15秒タイムアウト）
+ */
+function testSimpleChat() {
+  console.log("=== 簡単なチャットテスト ===");
+  return testAPIWithTimeout("こんにちは", {}, 15000);
+}
+
+/**
+ * 最小限のチャットテスト（10秒タイムアウト）
+ */
+function testMinimalChat() {
+  console.log("=== 最小限のチャットテスト ===");
+  return testAPIWithTimeout("hello", {}, 10000);
+}
+
+/**
  * 問題の原因を特定するためのクイック診断
  */
 function quickDiagnoseHangingIssue() {
