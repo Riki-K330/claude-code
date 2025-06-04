@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .settings-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+    
+    h2 {
+      color: #1a73e8;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 20px;
+    }
+    
+    .section:last-child {
+      border-bottom: none;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #5f6368;
+      font-weight: 500;
+    }
+    
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #4285f4;
+    }
+    
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    input[type="checkbox"] {
+      width: auto;
+    }
+    
+    .help-text {
+      font-size: 12px;
+      color: #5f6368;
+      margin-top: 4px;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+      justify-content: flex-end;
+    }
+    
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .btn-primary {
+      background-color: #4285f4;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #3367d6;
+    }
+    
+    .btn-secondary {
+      background-color: #f8f9fa;
+      color: #5f6368;
+      border: 1px solid #dadce0;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #e8eaed;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .loading.show {
+      display: block;
+    }
+    
+    .success-message,
+    .error-message {
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .success-message {
+      background-color: #e6f4ea;
+      color: #1e8e3e;
+      border: 1px solid #34a853;
+    }
+    
+    .error-message {
+      background-color: #fce8e6;
+      color: #d33b27;
+      border: 1px solid #ea4335;
+    }
+    
+    .success-message.show,
+    .error-message.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="settings-container">
+    <h2>⚙️ CTFチャットボット設定</h2>
+    
+    <div class="success-message" id="successMessage"></div>
+    <div class="error-message" id="errorMessage"></div>
+    
+    <form id="settingsForm">
+      <!-- 基本設定 -->
+      <div class="section">
+        <h3>🏥 クリニック情報</h3>
+        
+        <div class="form-group">
+          <label for="clinic_name">クリニック名</label>
+          <input type="text" id="clinic_name" name="clinic_name" required>
+          <div class="help-text">チャットボットが名乗る際のクリニック名</div>
+        </div>
+        
+        <div class="form-group">
+          <label for="partner_clinic">提携医療機関</label>
+          <input type="text" id="partner_clinic" name="partner_clinic">
+        </div>
+        
+        <div class="form-group">
+          <label for="greeting_1">挨拶文1</label>
+          <input type="text" id="greeting_1" name="greeting_1">
+          <div class="help-text">例：CTFオンラインクリニック事務局です😊</div>
+        </div>
+        
+        <div class="form-group">
+          <label for="greeting_2">挨拶文2（バリエーション）</label>
+          <input type="text" id="greeting_2" name="greeting_2">
+        </div>
+      </div>
+      
+      <!-- API設定 -->
+      <div class="section">
+        <h3>🔧 API設定</h3>
+        
+        <div class="form-group">
+          <label for="api_model">使用モデル</label>
+          <select id="api_model" name="api_model">
+            <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+            <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+            <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="api_max_tokens">最大トークン数</label>
+          <input type="number" id="api_max_tokens" name="api_max_tokens" min="100" max="4096">
+        </div>
+        
+        <div class="form-group">
+          <label for="api_temperature">生成温度（0-1）</label>
+          <input type="number" id="api_temperature" name="api_temperature" min="0" max="1" step="0.1">
+          <div class="help-text">低い値ほど一貫性が高く、高い値ほど創造的な応答になります</div>
+        </div>
+      </div>
+      
+      <!-- コスト設定 -->
+      <div class="section">
+        <h3>💰 コスト管理</h3>
+        
+        <div class="form-group">
+          <label for="monthly_budget">月間予算（円）</label>
+          <input type="number" id="monthly_budget" name="monthly_budget" min="0">
+        </div>
+        
+        <div class="form-group">
+          <label for="api_input_cost_per_1k">入力トークン単価（$/1K）</label>
+          <input type="number" id="api_input_cost_per_1k" name="api_input_cost_per_1k" step="0.001">
+        </div>
+        
+        <div class="form-group">
+          <label for="api_output_cost_per_1k">出力トークン単価（$/1K）</label>
+          <input type="number" id="api_output_cost_per_1k" name="api_output_cost_per_1k" step="0.001">
+        </div>
+        
+        <div class="form-group">
+          <label for="api_usd_to_jpy">為替レート（USD/JPY）</label>
+          <input type="number" id="api_usd_to_jpy" name="api_usd_to_jpy" step="0.01">
+        </div>
+        
+        <div class="form-group">
+          <label for="alert_threshold">予算アラート閾値（0-1）</label>
+          <input type="number" id="alert_threshold" name="alert_threshold" min="0" max="1" step="0.1">
+          <div class="help-text">月間予算のこの割合を超えたらアラートを送信</div>
+        </div>
+      </div>
+      
+      <!-- 通知設定 -->
+      <div class="section">
+        <h3>📧 通知設定</h3>
+        
+        <div class="form-group">
+          <label for="report_email">レポート送信先メールアドレス</label>
+          <input type="email" id="report_email" name="report_email">
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="enable_daily_report" name="enable_daily_report">
+          <label for="enable_daily_report">日次レポートを有効化</label>
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="enable_weekly_report" name="enable_weekly_report">
+          <label for="enable_weekly_report">週次レポートを有効化</label>
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="enable_monthly_report" name="enable_monthly_report">
+          <label for="enable_monthly_report">月次レポートを有効化</label>
+        </div>
+      </div>
+      
+      <!-- プロンプトテンプレート -->
+      <div class="section">
+        <h3>💬 応答テンプレート</h3>
+        
+        <div class="form-group">
+          <label for="prompt_medical_advice">医療相談への定型応答</label>
+          <textarea id="prompt_medical_advice" name="prompt_medical_advice"></textarea>
+          <div class="help-text">効果・副作用について聞かれた際の定型文</div>
+        </div>
+        
+        <div class="form-group">
+          <label for="error_api">APIエラーメッセージ</label>
+          <input type="text" id="error_api" name="error_api">
+        </div>
+        
+        <div class="form-group">
+          <label for="error_invalid_input">無効入力エラーメッセージ</label>
+          <input type="text" id="error_invalid_input" name="error_invalid_input">
+        </div>
+      </div>
+      
+      <div class="button-group">
+        <button type="button" class="btn-secondary" onclick="loadSettings()">再読み込み</button>
+        <button type="submit" class="btn-primary">保存</button>
+      </div>
+    </form>
+    
+    <div class="loading" id="loading">
+      <div>⏳ 処理中...</div>
+    </div>
+  </div>
+
+  <script>
+    // 設定の読み込み
+    function loadSettings() {
+      showLoading(true);
+      hideMessages();
+      
+      google.script.run
+        .withSuccessHandler(function(settings) {
+          // 設定値をフォームに反映
+          for (const [key, value] of Object.entries(settings)) {
+            const element = document.getElementById(key);
+            if (element) {
+              if (element.type === 'checkbox') {
+                element.checked = value === 'TRUE' || value === true;
+              } else {
+                element.value = value;
+              }
+            }
+          }
+          showLoading(false);
+        })
+        .withFailureHandler(function(error) {
+          showError('設定の読み込みに失敗しました: ' + error);
+          showLoading(false);
+        })
+        .getAllSettings();
+    }
+    
+    // フォームの送信
+    document.getElementById('settingsForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      showLoading(true);
+      hideMessages();
+      
+      const formData = new FormData(e.target);
+      const settings = {};
+      
+      // フォームデータを設定オブジェクトに変換
+      for (const [key, value] of formData.entries()) {
+        settings[key] = value;
+      }
+      
+      // チェックボックスの処理
+      const checkboxes = ['enable_daily_report', 'enable_weekly_report', 'enable_monthly_report'];
+      checkboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        settings[id] = checkbox.checked ? 'TRUE' : 'FALSE';
+      });
+      
+      // 設定を保存
+      google.script.run
+        .withSuccessHandler(function() {
+          showSuccess('設定を保存しました');
+          showLoading(false);
+        })
+        .withFailureHandler(function(error) {
+          showError('設定の保存に失敗しました: ' + error);
+          showLoading(false);
+        })
+        .saveSettings(settings);
+    });
+    
+    // ヘルパー関数
+    function showLoading(show) {
+      document.getElementById('loading').classList.toggle('show', show);
+    }
+    
+    function showSuccess(message) {
+      const element = document.getElementById('successMessage');
+      element.textContent = message;
+      element.classList.add('show');
+    }
+    
+    function showError(message) {
+      const element = document.getElementById('errorMessage');
+      element.textContent = message;
+      element.classList.add('show');
+    }
+    
+    function hideMessages() {
+      document.getElementById('successMessage').classList.remove('show');
+      document.getElementById('errorMessage').classList.remove('show');
+    }
+    
+    // 初期読み込み
+    loadSettings();
+  </script>
+</body>
+</html>
