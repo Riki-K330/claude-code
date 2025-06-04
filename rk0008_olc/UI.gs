@@ -15,7 +15,9 @@ function onOpen() {
       .addItem('日別レポート', 'showDailyCostReport')
       .addItem('週別レポート', 'showWeeklyCostReport')
       .addItem('月別レポート', 'showMonthlyCostReport'))
-    .addItem('🧪 テスト実行', 'runTestChat')
+    .addSubMenu(ui.createMenu('🧪 テスト')
+      .addItem('軽量テスト（推奨）', 'runLightweightTest')
+      .addItem('フルテスト（API呼び出し）', 'runTestChat'))
     .addSeparator()
     .addItem('🔧 初期設定', 'initializeSystem')
     .addItem('❓ ヘルプ', 'showHelp')
@@ -210,6 +212,25 @@ function initializeSystem() {
  * テストチャット実行
  */
 function runTestChat() {
+  const ui = SpreadsheetApp.getUi();
+  
+  // まず設定確認
+  if (CONFIG.API_KEY === "your-claude-api-key-here") {
+    ui.alert(
+      '⚠️ 設定エラー',
+      'Claude APIキーが設定されていません。\\nConfig.gsファイルを確認してください。'
+    );
+    return;
+  }
+  
+  if (CONFIG.SHEET_ID === "your-spreadsheet-id-here") {
+    ui.alert(
+      '⚠️ 設定エラー',
+      'スプレッドシートIDが設定されていません。\\nConfig.gsファイルを確認してください。'
+    );
+    return;
+  }
+  
   const testQueries = [
     "アカルボースの価格を教えてください",
     "マンジャロの副作用は？",
@@ -219,24 +240,75 @@ function runTestChat() {
   
   const randomQuery = testQueries[Math.floor(Math.random() * testQueries.length)];
   
-  SpreadsheetApp.getUi().alert(
+  ui.alert(
     '🧪 テスト実行',
     `テストクエリ: "${randomQuery}"\\n\\n実行中...`,
-    SpreadsheetApp.getUi().ButtonSet.OK
+    ui.ButtonSet.OK
   );
   
-  const result = processUserMessage(randomQuery, "test-user");
+  try {
+    // タイムアウト付きでテスト実行
+    const startTime = new Date();
+    const result = processUserMessage(randomQuery, "test-user");
+    const endTime = new Date();
+    
+    const responsePreview = result.response ? result.response.substring(0, 200) : "エラーが発生しました";
+    
+    ui.alert(
+      '🧪 テスト結果',
+      `クエリ: ${randomQuery}\\n\\n` +
+      `意図分類: ${result.intent}\\n` +
+      `成功: ${result.success}\\n` +
+      `応答時間: ${result.responseTime}ms\\n\\n` +
+      `回答: ${responsePreview}...`
+    );
+    
+  } catch (error) {
+    console.error("テスト実行エラー:", error);
+    ui.alert(
+      '❌ テストエラー',
+      `エラーが発生しました:\\n${error.toString()}\\n\\n` +
+      'ログを確認してください。'
+    );
+  }
+}
+
+/**
+ * 軽量テスト実行（API呼び出しなし）
+ */
+function runLightweightTest() {
+  const ui = SpreadsheetApp.getUi();
   
-  const responsePreview = result.response ? result.response.substring(0, 200) : "エラーが発生しました";
-  
-  SpreadsheetApp.getUi().alert(
-    '🧪 テスト結果',
-    `クエリ: ${randomQuery}\\n\\n` +
-    `意図分類: ${result.intent}\\n` +
-    `成功: ${result.success}\\n` +
-    `応答時間: ${result.responseTime}ms\\n\\n` +
-    `回答: ${responsePreview}...`
+  ui.alert(
+    '🧪 軽量テスト実行',
+    'API呼び出しなしでテストを実行します...',
+    ui.ButtonSet.OK
   );
+  
+  try {
+    const result = testLightweight();
+    
+    if (result.success) {
+      ui.alert(
+        '✅ 軽量テスト成功',
+        '基本機能は正常に動作しています。\\n\\n' +
+        'API呼び出しテストを行う場合は、\\n' +
+        'APIキーとスプレッドシートIDを確認してから\\n' +
+        '「テスト実行」を選択してください。'
+      );
+    } else {
+      ui.alert(
+        '❌ 軽量テストエラー',
+        `エラーが発生しました:\\n${result.error}`
+      );
+    }
+    
+  } catch (error) {
+    ui.alert(
+      '❌ テストエラー',
+      `予期しないエラーが発生しました:\\n${error.toString()}`
+    );
+  }
 }
 
 /**

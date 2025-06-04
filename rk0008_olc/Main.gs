@@ -307,6 +307,106 @@ function testSettings() {
 }
 
 /**
+ * 軽量テスト（API呼び出しなし）
+ */
+function testLightweight() {
+  console.log("=== 軽量テスト開始 ===");
+  
+  try {
+    // 1. 設定確認
+    console.log("API_KEY設定:", CONFIG.API_KEY !== "your-claude-api-key-here" ? "設定済み" : "未設定");
+    console.log("SHEET_ID設定:", CONFIG.SHEET_ID !== "your-spreadsheet-id-here" ? "設定済み" : "未設定");
+    
+    // 2. 意図分類テスト（軽量）
+    const testQuery = "アカルボースの価格";
+    const intent = categorizeIntent(testQuery);
+    console.log("意図分類結果:", intent);
+    
+    // 3. スプレッドシート接続テスト
+    if (CONFIG.SHEET_ID !== "your-spreadsheet-id-here") {
+      const spreadsheet = SpreadsheetApp.openById(CONFIG.SHEET_ID);
+      console.log("スプレッドシート接続:", "成功");
+      console.log("スプレッドシート名:", spreadsheet.getName());
+    } else {
+      console.log("スプレッドシートID未設定");
+    }
+    
+    console.log("=== 軽量テスト完了 ===");
+    return { success: true, message: "軽量テスト成功" };
+    
+  } catch (error) {
+    console.error("軽量テストエラー:", error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+/**
+ * Claude API呼び出しのみをテスト
+ */
+function testClaudeAPIOnly() {
+  console.log("=== Claude API単体テスト ===");
+  
+  try {
+    console.log("API_KEY確認:", CONFIG.API_KEY ? "設定済み" : "未設定");
+    console.log("APIキー先頭:", CONFIG.API_KEY ? CONFIG.API_KEY.substring(0, 20) + "..." : "なし");
+    
+    // 最小限のテストプロンプト
+    const testPrompt = "こんにちは";
+    const context = {};
+    
+    console.log("API呼び出し開始...");
+    const startTime = new Date();
+    
+    // タイムアウト設定付きでAPI呼び出し
+    const result = callClaudeAPI(testPrompt, context);
+    
+    const endTime = new Date();
+    console.log("API呼び出し終了。時間:", endTime - startTime, "ms");
+    console.log("結果:", result);
+    
+    return result;
+    
+  } catch (error) {
+    console.error("Claude APIテストエラー:", error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+/**
+ * API呼び出しなしでのメッセージ処理テスト
+ */
+function testMessageProcessingWithoutAPI(userMessage = "アカルボースについて教えて") {
+  console.log("=== API呼び出しなしテスト ===");
+  
+  try {
+    // 意図分類
+    const intent = categorizeIntent(userMessage);
+    console.log("意図分類:", intent);
+    
+    // コンテキスト収集
+    const context = getContextByIntent(intent, userMessage);
+    console.log("コンテキスト取得完了");
+    console.log("- 薬剤情報:", context.relatedMedicines ? context.relatedMedicines.length : 0, "件");
+    console.log("- 料金プラン:", context.pricePlans ? context.pricePlans.length : 0, "件");
+    console.log("- Q&A:", context.relatedQA ? context.relatedQA.length : 0, "件");
+    
+    return {
+      success: true,
+      intent: intent,
+      contextSize: {
+        medicines: context.relatedMedicines ? context.relatedMedicines.length : 0,
+        plans: context.pricePlans ? context.pricePlans.length : 0,
+        qa: context.relatedQA ? context.relatedQA.length : 0
+      }
+    };
+    
+  } catch (error) {
+    console.error("処理エラー:", error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+/**
  * Q&A機能のテスト（デバッグ用）
  */
 function testQAFunctionality() {
