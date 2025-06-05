@@ -46,6 +46,9 @@ function needsMedicineSearch(intent) {
  * 価格検索が必要かどうか
  */
 function needsPriceSearch(intent) {
+  // intentが存在しない場合の対処
+  if (!intent) return false;
+  
   const priceKeywords = ["価格", "値段", "料金", "いくら", "費用"];
   return priceKeywords.some(keyword => intent.includes(keyword));
 }
@@ -123,12 +126,25 @@ function searchPricePlansWithKeywords(keywords, limit) {
       
       // 薬剤名チェック
       keywords.forEach(keyword => {
-        if (plan.medicine.includes(keyword)) {
+        if (plan.medicine && plan.medicine.includes(keyword)) {
           matches = true;
         }
         // 用量チェック（例: "5mg" が quantity に含まれるか）
         if (keyword.includes("mg") && plan.quantity.includes(keyword)) {
           matches = true;
+        }
+        // アカルボースの特別処理
+        if (keyword === "アカルボース" && plan.medicine.includes("アカルボース")) {
+          matches = true;
+        }
+        // 価格キーワードがある場合は薬剤名だけでもマッチ
+        if ((keyword === "価格" || keyword === "料金") && plan.medicine) {
+          // 他のキーワードに薬剤名が含まれているかチェック
+          keywords.forEach(k => {
+            if (k !== "価格" && k !== "料金" && plan.medicine.includes(k)) {
+              matches = true;
+            }
+          });
         }
       });
       

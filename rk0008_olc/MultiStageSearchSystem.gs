@@ -347,6 +347,10 @@ function callClaudeAPILightweight(prompt) {
     if (userQuery.includes("アカルボース")) {
       intents.push("項目1: アカルボース情報");
     }
+    // アカルボースの価格検索を明示的に追加
+    if (userQuery.includes("アカルボース") && (userQuery.includes("価格") || userQuery.includes("値段"))) {
+      intents.push("項目2: アカルボース料金プラン");
+    }
     
     return {
       content: intents.join("\n") || "項目1: 一般的な質問",
