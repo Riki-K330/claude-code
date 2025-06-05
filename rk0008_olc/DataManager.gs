@@ -297,9 +297,13 @@ function logConversation(userId, userMessage, intent, botResponse, responseTime,
     const maskedUser = maskPersonalInfo(userMessage);
     const maskedBot = maskPersonalInfo(botResponse);
     
+    // メールアドレスを取得
+    const userEmail = getCurrentUserEmail ? getCurrentUserEmail() : "unknown@example.com";
+    
     sheet.appendRow([
       timestamp,
       userId || "anonymous",
+      userEmail,
       maskedUser,
       intent,
       maskedBot,

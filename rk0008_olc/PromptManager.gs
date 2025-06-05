@@ -113,6 +113,24 @@ function categorizeIntent(userMessage) {
  * 意図に応じたコンテキスト情報を取得
  */
 function getContextByIntent(intent, userMessage) {
+  // 多段階検索システムが有効な場合はそちらを使用
+  if (typeof executeMultiStageSearch !== 'undefined' && SEARCH_CONFIG?.enable_ai_filter) {
+    console.log("多段階検索システムを使用");
+    const searchResult = executeMultiStageSearch(userMessage);
+    
+    if (searchResult.success) {
+      console.log("多段階検索成功 - 取得データ:");
+      console.log(`  薬剤: ${searchResult.context.relatedMedicines.length}件`);
+      console.log(`  料金: ${searchResult.context.pricePlans.length}件`);
+      console.log(`  Q&A: ${searchResult.context.relatedQA.length}件`);
+      
+      return searchResult.context;
+    } else {
+      console.error("多段階検索失敗、従来の方式にフォールバック");
+    }
+  }
+  
+  // 従来の検索方式
   const context = {};
   
   console.log("意図分類結果:", intent);
@@ -121,14 +139,14 @@ function getContextByIntent(intent, userMessage) {
   switch (intent) {
     case "medicine_info":
       context.relatedMedicines = searchMedicineInfo(userMessage);
-      context.relatedQA = searchRelatedQA("薬剤情報", userMessage);
+      context.relatedQA = searchRelatedQAWithFilter("薬剤情報", userMessage);
       // 薬剤情報の場合は料金も含める
       context.pricePlans = getPricePlans(userMessage);
       break;
       
     case "pricing":
       context.pricePlans = getPricePlans(userMessage);
-      context.relatedQA = searchRelatedQA("料金", userMessage);
+      context.relatedQA = searchRelatedQAWithFilter("料金", userMessage);
       context.relatedMedicines = searchMedicineInfo(userMessage);
       break;
       
@@ -136,9 +154,9 @@ function getContextByIntent(intent, userMessage) {
       context.procedureInfo = getProcedureInfo(userMessage);
       // 医療費控除の場合は該当カテゴリで検索
       if (userMessage.includes("医療費控除") || userMessage.includes("控除")) {
-        context.relatedQA = searchRelatedQA("医療費控除", userMessage);
+        context.relatedQA = searchRelatedQAWithFilter("医療費控除", userMessage);
       } else {
-        context.relatedQA = searchRelatedQA("手続き", userMessage);
+        context.relatedQA = searchRelatedQAWithFilter("手続き", userMessage);
       }
       break;
       
@@ -149,7 +167,7 @@ function getContextByIntent(intent, userMessage) {
       
     case "delivery":
       context.deliveryInfo = getDeliveryInfo();
-      context.relatedQA = searchRelatedQA("配送", userMessage);
+      context.relatedQA = searchRelatedQAWithFilter("配送", userMessage);
       break;
       
     default:
@@ -157,7 +175,7 @@ function getContextByIntent(intent, userMessage) {
       if (userMessage.includes("アカルボース") || userMessage.includes("マンジャロ") || userMessage.includes("リベルサス")) {
         context.relatedMedicines = searchMedicineInfo(userMessage);
         context.pricePlans = getPricePlans(userMessage);
-        context.relatedQA = searchRelatedQA("薬剤", userMessage);
+        context.relatedQA = searchRelatedQAWithFilter("薬剤", userMessage);
       }
       break;
   }

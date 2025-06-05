@@ -161,6 +161,9 @@ function trackAPIUsage(inputTokens, outputTokens, responseTime, modelName = null
       calculateModelCost(inputTokens, outputTokens, usedModel) : 
       calculateAPICost(inputTokens, outputTokens);
     
+    // メールアドレスを取得
+    const userEmail = getCurrentUserEmail ? getCurrentUserEmail() : "unknown@example.com";
+    
     sheet.appendRow([
       timestamp,
       usedModel,
@@ -169,7 +172,8 @@ function trackAPIUsage(inputTokens, outputTokens, responseTime, modelName = null
       inputTokens + outputTokens,
       cost,
       responseTime,
-      Utilities.formatDate(timestamp, "JST", "yyyy-MM")
+      Utilities.formatDate(timestamp, "JST", "yyyy-MM"),
+      userEmail
     ]);
     
     // 月間予算チェック
